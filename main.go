@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+	"strconv"
 	"strings"
 
 	"github.com/fatih/color"
@@ -59,7 +60,7 @@ func main() {
 	}
 
 	if _, err := os.Stat(GConfigFilePath); os.IsNotExist(err) && len(subUrl) == 0 && len(addVmess) == 0 {
-		eColor.Println("v2rayGen Config file is not exist. Use -s or -a to add a config file first.")
+		eColor.Println("v2rayGen Config file is not exist. Use -s to add a config file first.")
 		flag.Usage()
 		return
 	}
@@ -72,16 +73,22 @@ func main() {
 		confObj.Protocol = "socks"
 		confObj.Index = -1
 	}
-	if len(confObj.SubURL) == 0 && len(subUrl) == 0 {
-		eColor.Println("No subscribe URL found.")
-		flag.Usage()
-		return
+
+	// v2rayGen -u
+	if needUpdate && len(subUrl) == 0 {
+		if len(confObj.SubURL) == 0 {
+			eColor.Println("No subscribe URL found in config file.")
+			flag.Usage()
+			return
+		}
+		err := updateBySubscribeUrl(&confObj, subUrl)
+		if err != nil {
+			eColor.Println(err)
+			return
+		}
 	}
 
-	if needUpdate && len(confObj.SubURL) > 0 && len(subUrl) == 0 {
-		subUrl = confObj.SubURL
-	}
-
+	// v2rayGen -s https://example.org/v2ray
 	if len(subUrl) != 0 {
 		confObj.SubURL = subUrl
 		err := updateBySubscribeUrl(&confObj, subUrl)
@@ -90,19 +97,18 @@ func main() {
 			return
 		}
 	}
+
+	// v2rayGen -a vmess://...
 	if len(addVmess) != 0 {
-		if len(confObj.Vmess) == 0 {
-			vmObj, err := parseVmessUrl(addVmess)
-			if err != nil {
-				eColor.Println(err)
-			} else {
-				confObj.Vmess = append(confObj.Vmess, vmObj)
-			}
+		vmObj, err := parseVmessUrl(addVmess)
+		if err != nil {
+			eColor.Println(err)
+		} else {
+			confObj.Vmess = append(confObj.Vmess, vmObj)
 		}
 	}
 
 	generateV2rayConfig(&confObj)
-
 }
 
 func readConfig(confPath string) (ConfigInfo, error) {
@@ -197,18 +203,20 @@ func generateV2rayConfig(confObj *ConfigInfo) {
 				wColor.Printf("%d. %s\n", idx+1, vm.Ps)
 			}
 		}
-		wColor.Printf("%d. 退出\n", len(confObj.Vmess)+1)
-		wColor.Print("Select active server:")
-		var activeIdx int
+		wColor.Println("Q. Exit")
+		wColor.Print("Select an active server: ")
+		var activeIdx string
+		var index int
 		_, err := fmt.Scan(&activeIdx)
-		if err != nil || activeIdx < 1 || activeIdx > (len(confObj.Vmess)+1) {
+		index, err = strconv.Atoi(activeIdx)
+		if err != nil || index < 1 || index > len(confObj.Vmess) {
+			if activeIdx == "Q" || activeIdx == "q" {
+				return
+			}
 			eColor.Println("Error number")
 			continue
 		}
-		if activeIdx == (len(confObj.Vmess) + 1) {
-			return
-		}
-		confObj.Index = activeIdx
+		confObj.Index = index
 		saveV2rayConfigAndRun(V2rayConfigFilePath, confObj)
 		break
 	}

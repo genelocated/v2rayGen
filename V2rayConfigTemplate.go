@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/fatih/color"
 	"io/ioutil"
 	"os"
 	"os/exec"
+
+	"github.com/fatih/color"
 )
 
 func saveV2rayConfigAndRun(filePath string, confObj *ConfigInfo) {
