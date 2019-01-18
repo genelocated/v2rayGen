@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"os/exec"
 	"runtime"
 	"strings"
 
@@ -51,8 +52,10 @@ func main() {
 	}
 
 	if _, err := os.Stat(v2rayBinaryName); os.IsNotExist(err) {
-		eColor.Println("v2ray core not found\nDownload and extract to this folder from https://github.com/v2ray/v2ray-core/releases/latest")
-		return
+		if _, err = exec.Command(v2rayBinaryName, "-version").Output(); err != nil {
+			eColor.Println("v2ray core not found\nDownload and extract to this folder from https://github.com/v2ray/v2ray-core/releases/latest")
+			return
+		}
 	}
 
 	if _, err := os.Stat(GConfigFilePath); os.IsNotExist(err) && len(subUrl) == 0 && len(addVmess) == 0 {
@@ -69,7 +72,6 @@ func main() {
 		confObj.Protocol = "socks"
 		confObj.Index = -1
 	}
-
 	if len(confObj.SubURL) == 0 && len(subUrl) == 0 {
 		eColor.Println("No subscribe URL found.")
 		flag.Usage()
@@ -92,7 +94,7 @@ func main() {
 		if len(confObj.Vmess) == 0 {
 			vmObj, err := parseVmessUrl(addVmess)
 			if err != nil {
-				eColor.Println("Invalid vmess URL, skip.")
+				eColor.Println(err)
 			} else {
 				confObj.Vmess = append(confObj.Vmess, vmObj)
 			}
@@ -156,6 +158,7 @@ func updateBySubscribeUrl(conf *ConfigInfo, subUrl string) error {
 	}
 	return nil
 }
+
 func parseVmessUrl(vmessUrl string) (VmessInfo, error) {
 	var json = jsoniter.ConfigCompatibleWithStandardLibrary
 	//fmt.Println(vmessUrl)
