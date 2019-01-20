@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"syscall"
 
 	"github.com/fatih/color"
 )
@@ -132,7 +133,17 @@ func saveV2rayConfigAndRun(filePath string, confObj *ConfigInfo) {
 		return
 	}
 	color.Blue("Run %s at port:%d", v2rayBinaryName, confObj.LocalPort)
-	cmd := exec.Command(v2rayBinaryName)
-	cmd.Stdout = os.Stdout
-	cmd.Start()
+	execCmd(v2rayBinaryName)
+}
+
+func execCmd(cmd string, args ...string) int {
+	path, err := exec.LookPath(cmd)
+	if err != nil {
+		fmt.Println(err)
+		return 1
+	}
+	if err := syscall.Exec(path, append([]string{cmd}, args...), os.Environ()); err != nil {
+		return 1
+	}
+	return 0
 }
