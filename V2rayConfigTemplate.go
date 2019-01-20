@@ -54,7 +54,7 @@ func saveV2rayConfigAndRun(filePath string, confObj *ConfigInfo) {
       "servers": null
     },
     "streamSettings": {
-      "network": "tcp",
+      "network": "%s",
       "security": "%s",
       "tlsSettings": null,
       "tcpSettings": null,
@@ -124,7 +124,7 @@ func saveV2rayConfigAndRun(filePath string, confObj *ConfigInfo) {
     }
   }
 }`, confObj.LocalPort, confObj.Protocol,
-		activeVm.Add, activeVm.Port, activeVm.ID, activeVm.Aid, activeVm.TLS)
+		activeVm.Add, activeVm.Port, activeVm.ID, activeVm.Aid, activeVm.Net, activeVm.TLS)
 
 	err := ioutil.WriteFile(filePath, []byte(confContent), 0644)
 	if err != nil {
