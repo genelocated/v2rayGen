@@ -41,7 +41,7 @@ func saveV2rayConfigAndRun(filePath string, confObj *ConfigInfo) {
       "vnext": [
         {
           "address": "%s",
-          "port": %s,
+          "port": %v,
           "users": [
             {
               "id": "%s",
